@@ -1,0 +1,14 @@
+apiVersion: 1
+
+# Points Grafana at a folder of dashboard JSON files to auto-load on startup, instead of
+# requiring someone to manually import llm-router.json through the UI after every fresh
+# `docker compose up`.
+providers:
+  - name: llm-router
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards

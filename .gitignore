@@ -1,0 +1,29 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env*
+!.env.example
+
+# Logs
+*.log
+
+# Generated benchmark report (Stage 9 output artifact, not source)
+benchmark-report.txt
+
+# Docker volumes (bind-mounted local data, if any)
+docker/data/

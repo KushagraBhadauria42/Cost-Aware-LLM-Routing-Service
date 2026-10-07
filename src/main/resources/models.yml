@@ -1,0 +1,24 @@
+models:
+  - provider: mock
+    model: mock-model-v1
+    price-per-1k-tokens: 0.0
+    avg-latency-ms: 150
+    quality-tier: MEDIUM
+
+  - provider: groq
+    model: llama-3.1-8b-instant
+    price-per-1k-tokens: 0.05
+    avg-latency-ms: 400
+    quality-tier: MEDIUM
+
+  - provider: openrouter
+    model: meta-llama/llama-3.1-8b-instruct:free
+    price-per-1k-tokens: 0.0
+    avg-latency-ms: 900
+    quality-tier: MEDIUM
+
+  - provider: gemini
+    model: gemini-1.5-flash
+    price-per-1k-tokens: 0.02
+    avg-latency-ms: 600
+    quality-tier: HIGH

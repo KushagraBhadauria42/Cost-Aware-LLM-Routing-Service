@@ -1,0 +1,10 @@
+target/
+.git/
+.vscode/
+.idea/
+*.log
+.env
+.env.local
+benchmark-report.txt
+docker/grafana/
+docker/prometheus/

@@ -1,0 +1,145 @@
+{
+  "title": "Cost-Aware LLM Router",
+  "uid": "llm-router-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Requests per second (by provider)",
+      "description": "rate(llm_requests_total[5m]) grouped by provider. One line per provider that actually answered the request (the responding model after any fallback, not the originally-routed one). Shows overall traffic volume and which provider is serving most of it.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (provider) (rate(llm_requests_total[5m]))",
+          "legendFormat": "{{provider}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 2,
+      "title": "Average provider latency",
+      "description": "rate(llm_provider_latency_seconds_sum[5m]) / rate(llm_provider_latency_seconds_count[5m]) by provider. Only real provider calls are recorded here (cache hits are deliberately excluded - they'd falsely drag the average toward 0). A simple average, not p95/p99, keeping with this project's 'simple over precise' convention; a true percentile would need Timer.builder(...).publishPercentileHistogram().",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (provider) (rate(llm_provider_latency_seconds_sum[5m])) / sum by (provider) (rate(llm_provider_latency_seconds_count[5m]))",
+          "legendFormat": "{{provider}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "id": 3,
+      "title": "Cache hit rate",
+      "description": "% of requests in the selected time range where cache_hit=\"true\", out of all requests. Driven by the same llm_requests_total counter as the requests panel (tag-based ratio), not a separate hit/miss counter pair, so it can never disagree with the raw request counts.",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(increase(llm_requests_total{cache_hit=\"true\"}[$__range])) / sum(increase(llm_requests_total[$__range]))",
+          "legendFormat": "cache hit rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 20 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "title": "Fallback count",
+      "description": "count of requests (in the selected range) where fallback_used=\"true\" - the originally-ranked model failed and a lower-ranked candidate answered instead. A rising trend means a primary provider is unhealthy.",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(llm_requests_total{fallback_used=\"true\"}[$__range]))",
+          "legendFormat": "fallbacks",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] }
+    },
+    {
+      "id": 5,
+      "title": "Virtual cost (total, selected range)",
+      "description": "sum(increase(llm_virtual_cost_total[$__range])) - what this project actually 'spent' (made-up per-model prices from models.yml), including $0 for cache hits and free models.",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(llm_virtual_cost_total[$__range]))",
+          "legendFormat": "virtual cost",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 }, "overrides": [] }
+    },
+    {
+      "id": 6,
+      "title": "Savings (total, selected range)",
+      "description": "sum(increase(llm_baseline_cost_total[$__range])) - sum(increase(llm_virtual_cost_total[$__range])). Computed in Grafana from the two independently-recorded cost counters rather than as its own 3rd metric, so 'savings' can never drift out of sync with the baseline/virtual numbers it's derived from.",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(llm_baseline_cost_total[$__range])) - sum(increase(llm_virtual_cost_total[$__range]))",
+          "legendFormat": "savings",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 }, "overrides": [] }
+    },
+    {
+      "id": 7,
+      "title": "Savings percent (total, selected range)",
+      "description": "100 * savings / baseline cost - same derivation as the /v1/usage API's savingsPercent field, just computed via PromQL instead of the UsageLogService Java code, from the same two underlying cost counters.",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * (sum(increase(llm_baseline_cost_total[$__range])) - sum(increase(llm_virtual_cost_total[$__range]))) / sum(increase(llm_baseline_cost_total[$__range]))",
+          "legendFormat": "savings %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "decimals": 1 }, "overrides": [] }
+    }
+  ]
+}

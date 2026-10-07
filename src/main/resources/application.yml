@@ -1,0 +1,128 @@
+spring:
+  application:
+    name: llm-router
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:llmrouter}
+    username: ${DB_USERNAME:llmrouter}
+    password: ${DB_PASSWORD:llmrouter}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  jackson:
+    mapper:
+      accept-case-insensitive-enums: true
+
+server:
+  port: 8080
+
+llm:
+  cache:
+    enabled: ${CHAT_CACHE_ENABLED:true}
+    ttl-seconds: ${CHAT_CACHE_TTL_SECONDS:600}
+  admin:
+    secret: ${ADMIN_SECRET:}
+  benchmark:
+    enabled: ${BENCHMARK_ENABLED:false}
+    use-real-providers: ${BENCHMARK_USE_REAL_PROVIDERS:false}
+  provider:
+    mock:
+      min-latency-ms: ${MOCK_MIN_LATENCY_MS:50}
+      max-latency-ms: ${MOCK_MAX_LATENCY_MS:300}
+      failure-rate: ${MOCK_FAILURE_RATE:0.0}
+      timeout-ms: ${MOCK_TIMEOUT_MS:0}
+      model: mock-model-v1
+    groq:
+      api-key: ${GROQ_API_KEY:}
+      base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
+      model: ${GROQ_MODEL:llama-3.1-8b-instant}
+      timeout-ms: ${GROQ_TIMEOUT_MS:10000}
+    openrouter:
+      api-key: ${OPENROUTER_API_KEY:}
+      base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+      model: ${OPENROUTER_MODEL:meta-llama/llama-3.1-8b-instruct:free}
+      timeout-ms: ${OPENROUTER_TIMEOUT_MS:10000}
+      referer: ${OPENROUTER_REFERER:}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+      model: ${GEMINI_MODEL:gemini-1.5-flash}
+      timeout-ms: ${GEMINI_TIMEOUT_MS:10000}
+
+# Per-provider resilience. Each provider's real network timeout is already enforced at the
+# WebClient layer (see llm.provider.*.timeout-ms above / MockProvider's simulated timeout);
+# Resilience4j's job here is retrying transient failures and breaking the circuit on a provider
+# that is persistently failing, so ChatService's fallback chain can move on to the next-ranked
+# candidate instead of hammering a dead provider.
+resilience4j:
+  retry:
+    instances:
+      mock:
+        max-attempts: 3
+        wait-duration: 50ms
+      groq:
+        max-attempts: 3
+        wait-duration: 200ms
+      openrouter:
+        max-attempts: 3
+        wait-duration: 200ms
+      gemini:
+        max-attempts: 3
+        wait-duration: 200ms
+  circuitbreaker:
+    instances:
+      mock:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+      groq:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      openrouter:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      gemini:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    com.example.llmrouter: INFO

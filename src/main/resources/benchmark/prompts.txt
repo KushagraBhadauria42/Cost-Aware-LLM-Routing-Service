@@ -1,0 +1,73 @@
+# Stage 9 benchmark prompt set: 60 fixed prompts, replayed under every routing strategy.
+# Lines starting with # are comments; blank lines are ignored. One prompt per line.
+#
+# Mix deliberately covers every AutoRoutingStrategy branch (FAST_WORD_THRESHOLD=8,
+# QUALITY_WORD_THRESHOLD=60, code-block detection) so the AUTO strategy's results are
+# representative, not accidentally all-one-bucket.
+
+# --- short prompts (<=8 words): AUTO -> fast ---
+Hi there
+What is the capital of France?
+Translate hello to Spanish
+Summarize this in one word
+What time zone is UTC?
+Give me a synonym for happy
+Is Pluto a planet?
+What's 12 times 7?
+Name a primary color
+How many continents are there?
+Define the word ephemeral
+What day comes after Monday?
+Convert 10 miles to kilometers
+List three fruits
+What is H2O?
+
+# --- medium prompts (9-60 words): AUTO -> cheap ---
+Explain the difference between TCP and UDP in a couple of sentences suitable for a beginner.
+Write a short product description for a reusable water bottle aimed at hikers and campers.
+Summarize the plot of a typical mystery novel in three sentences without naming specific books.
+What are the main causes of inflation in a modern economy, explained simply for a student?
+Give me five tips for improving focus while studying for an exam over a long weekend.
+Describe how a refrigerator keeps food cold using basic physics concepts anyone could understand.
+Outline a simple weekly meal plan for someone trying to eat more vegetables and less sugar.
+Explain what a REST API is to someone who has never written any code before today.
+Compare renting versus buying a home in terms of flexibility and long-term financial cost.
+What questions should I ask before adopting a dog from a shelter this weekend?
+Write a friendly reminder email about an upcoming team meeting scheduled for next Thursday afternoon.
+Explain photosynthesis in simple terms appropriate for a curious ten-year-old child.
+Suggest three icebreaker questions for a small team meeting with people who just met.
+Give a brief overview of how vaccines train the immune system to fight future infections.
+What's the difference between weather and climate, explained for someone with no science background?
+Describe three strategies for staying motivated when learning a new language as an adult.
+Explain why the sky appears blue during the day in a way a child could follow.
+What should a beginner know before starting a vegetable garden in a small backyard space?
+Summarize the benefits of regular exercise for both physical and mental health in a few sentences.
+Explain the basic idea behind compound interest using a simple savings account example.
+
+# --- long prompts (>60 words): AUTO -> quality ---
+Write a detailed, multi-paragraph explanation of how a modern internet search engine works end to end, starting from a user typing a query into a browser, through DNS resolution, ranking signals, the index lookup, and finally rendering results back to the user, making sure to mention caching and load balancing as performance considerations along the way, and keep the tone appropriate for a non-technical reader who is simply curious about the topic.
+Draft a thorough onboarding guide for a brand new remote employee joining a mid-size software company, covering their first day setup, how to request access to internal tools, who to reach out to with questions about payroll and benefits, expectations around daily standups and asynchronous communication, and a short note about company culture and values so they feel welcome from the very first morning.
+Explain, in significant depth, the historical events and underlying economic pressures that are commonly cited as contributing causes of a major global recession, covering at least three distinct factors, how they interacted with one another over time, and what lessons policymakers are generally considered to have learned from the experience for future economic downturns.
+Provide a comprehensive comparison of three different popular project management methodologies, describing the core philosophy behind each one, the typical team size and project type each is best suited for, common criticisms leveled against each approach by practitioners, and a recommendation for how a small startup team might choose between them based on their current stage of growth.
+Write an in-depth explanation suitable for a college-level audience describing how neural networks learn from data, including a description of forward propagation, the role of a loss function, how gradients are computed and used to update weights during backpropagation, and why techniques like regularization and dropout are commonly used to prevent overfitting on the training dataset.
+Compose a long, detailed travel itinerary for a two week trip across a fictional country, including suggestions for how to split time between a capital city with museums and nightlife, a coastal region known for beaches and seafood, and a mountainous area popular for hiking, while also noting rough budget considerations and the best time of year to visit each region.
+Explain thoroughly the difference between civil law and common law legal systems, covering their historical origins, how judges and precedent function differently under each system, the role of written codes versus case law, and giving at least two real-world examples of countries that use each system so the explanation is grounded rather than purely abstract.
+Write a detailed guide explaining how to set up a small home network for a family with multiple devices, covering router placement, the difference between 2.4GHz and 5GHz Wi-Fi bands, basic security practices like changing default passwords and enabling a firewall, and how to troubleshoot a slow connection using simple diagnostic steps anyone can follow without needing networking expertise.
+
+# --- code-block prompts: AUTO -> quality regardless of word count (the ``` triggers it) ---
+Fix the bug in this function: ```def add(a, b):\n    return a - b```
+Explain what this snippet does: ```for i in range(10): print(i*i)```
+Review this code for style issues: ```function sum(a,b){return a+b}```
+Convert this Python snippet to Java: ```x = [i for i in range(5) if i % 2 == 0]```
+What does this SQL query return? ```SELECT name FROM users WHERE active = 1```
+Refactor this to use a list comprehension: ```result = []\nfor x in data:\n    result.append(x*2)```
+Spot the off-by-one error here: ```for i in range(1, len(arr)): total += arr[i]```
+Why does this throw a NullPointerException? ```String s = null; System.out.println(s.length());```
+Write a unit test for this method: ```public int square(int n) { return n * n; }```
+Explain the time complexity of this loop: ```for i in range(n):\n    for j in range(n):\n        print(i, j)```
+
+# --- a few repeated/similar prompts to exercise cache-adjacent wording variety (benchmark itself doesn't use the cache, but keeps the set realistic) ---
+What's the weather like in general during autumn?
+What is autumn weather typically like?
+Give me a quick joke about computers
+Tell me a short computer-related joke
